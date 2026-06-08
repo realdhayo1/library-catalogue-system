@@ -5,24 +5,24 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='catalog.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
+
 <body>
 
+<!-- ================= HERO ================= -->
 <section class="hero">
     <h1>LIBRARY CATALOGUE</h1>
-    <p>Search books, add to checkout, and manage borrowing</p>
+    <p>Instant search • Add books • Checkout system</p>
 
-    <form method="GET" action="/">
-        <input type="text" name="q" placeholder="Search books..." required>
-        <button type="submit">Search</button>
-    </form>
+    <!-- ❌ NO FORM (important fix) -->
+    <input id="searchBox" type="text" placeholder="Search books, authors, ISBN...">
 </section>
 
-<!-- CHECKOUT (ONLY SHOW AFTER SEARCH) -->
-{% if query %}
+
+<!-- ================= CHECKOUT ================= -->
 <section class="checkout-box">
     <h2>CHECKOUT</h2>
 
-    <div id="checkoutList" class="checkout-list">
+    <div id="checkoutList">
         <p class="placeholder">No books added yet</p>
     </div>
 
@@ -31,51 +31,92 @@
     </button>
 </section>
 
-<!-- RESULTS -->
-<section class="search-results">
-    <h2>Results for "{{ query }}"</h2>
 
+<!-- ================= SEARCH RESULTS ================= -->
+<section class="search-results">
+    <h2>Results</h2>
     <a href="/" class="back-home">← Back to Home</a>
 
-    <div class="book-grid">
-        {% for book in results %}
-        <div class="book-card">
+    <div id="results" class="book-grid"></div>
+</section>
+
+
+<!-- ================= JAVASCRIPT ================= -->
+<script>
+
+let checkout = [];
+let currentResults = [];
+
+/* ---------------- INSTANT SEARCH ---------------- */
+document.getElementById("searchBox").addEventListener("input", async function(e){
+
+    let query = e.target.value.trim();
+
+    if(query.length < 2){
+        document.getElementById("results").innerHTML = "";
+        return;
+    }
+
+    let res = await fetch(`/search?q=${query}`);
+    currentResults = await res.json();
+
+    renderResults();
+});
+
+
+/* ---------------- RENDER SEARCH RESULTS ---------------- */
+function renderResults(){
+
+    let box = document.getElementById("results");
+    box.innerHTML = "";
+
+    currentResults.forEach((book, index) => {
+
+        let isAdded = checkout.some(b => b.title === book.title);
+
+        let div = document.createElement("div");
+        div.className = "book-card";
+
+        div.innerHTML = `
             <img src="${book.cover}" onerror="this.src='https://via.placeholder.com/180x260?text=No+Cover'">
 
             <div class="book-info">
-                <h3>{{ book.title }}</h3>
-                <p>{{ book.author }}</p>
-                <p>{{ book.year }}</p>
+                <h3>${book.title}</h3>
+                <p>${book.author}</p>
+                <p>${book.year}</p>
 
-                <button onclick="toggleBook('{{ book.title }}', this)">
-                    + Add
+                <button onclick="toggleBook(${index})">
+                    ${isAdded ? "Remove" : "+ Add"}
                 </button>
             </div>
-        </div>
-        {% endfor %}
-    </div>
-</section>
-{% endif %}
+        `;
 
-<script>
-let checkout = [];
+        box.appendChild(div);
+    });
+}
 
-function toggleBook(title, btn){
 
-    let index = checkout.indexOf(title);
+/* ---------------- ADD / REMOVE BOOK ---------------- */
+function toggleBook(index){
 
-    if(index === -1){
-        checkout.push(title);
-        btn.innerText = "Remove";
+    let book = currentResults[index];
+
+    let existingIndex = checkout.findIndex(b => b.title === book.title);
+
+    if(existingIndex === -1){
+        checkout.push(book);
     } else {
-        checkout.splice(index, 1);
-        btn.innerText = "+ Add";
+        checkout.splice(existingIndex, 1);
     }
 
     renderCheckout();
+    renderResults();
 }
 
+
+/* ---------------- CHECKOUT PANEL ---------------- */
 function renderCheckout(){
+
     let box = document.getElementById("checkoutList");
     box.innerHTML = "";
 
@@ -84,15 +125,18 @@ function renderCheckout(){
         return;
     }
 
-    checkout.forEach((book) => {
+    checkout.forEach(book => {
         let div = document.createElement("div");
         div.className = "checkout-item";
-        div.innerText = book;
+        div.innerText = book.title;
         box.appendChild(div);
     });
 }
 
+
+/* ---------------- FINAL CHECKOUT ---------------- */
 function checkoutBooks(){
+
     if(checkout.length === 0){
         alert("No books added yet");
         return;
@@ -102,11 +146,9 @@ function checkoutBooks(){
 
     checkout = [];
     renderCheckout();
-
-    document.querySelectorAll(".book-info button").forEach(btn => {
-        btn.innerText = "+ Add";
-    });
+    renderResults();
 }
+
 </script>
 
 </body>
