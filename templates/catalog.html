@@ -40,7 +40,7 @@
     <div class="book-grid">
         {% for book in results %}
         <div class="book-card">
-            <img src="{{ book.cover }}">
+            <img src="${book.cover}" onerror="this.src='https://via.placeholder.com/180x260?text=No+Cover'">
 
             <div class="book-info">
                 <h3>{{ book.title }}</h3>
