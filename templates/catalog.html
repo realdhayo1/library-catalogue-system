@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Library Catalogue</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='catalog.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<section class="hero">
+    <h1>LIBRARY CATALOGUE</h1>
+    <p>Search books, add to checkout, and manage borrowing</p>
+
+    <form method="GET" action="/">
+        <input type="text" name="q" placeholder="Search books..." required>
+        <button type="submit">Search</button>
+    </form>
+</section>
+
+<!-- CHECKOUT (ONLY SHOW AFTER SEARCH) -->
+{% if query %}
+<section class="checkout-box">
+    <h2>CHECKOUT</h2>
+
+    <div id="checkoutList" class="checkout-list">
+        <p class="placeholder">No books added yet</p>
+    </div>
+
+    <button class="checkout-btn" onclick="checkoutBooks()">
+        Checkout Books
+    </button>
+</section>
+
+<!-- RESULTS -->
+<section class="search-results">
+    <h2>Results for "{{ query }}"</h2>
+
+    <a href="/" class="back-home">← Back to Home</a>
+
+    <div class="book-grid">
+        {% for book in results %}
+        <div class="book-card">
+            <img src="{{ book.cover }}">
+
+            <div class="book-info">
+                <h3>{{ book.title }}</h3>
+                <p>{{ book.author }}</p>
+                <p>{{ book.year }}</p>
+
+                <button onclick="toggleBook('{{ book.title }}', this)">
+                    + Add
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<script>
+let checkout = [];
+
+function toggleBook(title, btn){
+
+    let index = checkout.indexOf(title);
+
+    if(index === -1){
+        checkout.push(title);
+        btn.innerText = "Remove";
+    } else {
+        checkout.splice(index, 1);
+        btn.innerText = "+ Add";
+    }
+
+    renderCheckout();
+}
+
+function renderCheckout(){
+    let box = document.getElementById("checkoutList");
+    box.innerHTML = "";
+
+    if(checkout.length === 0){
+        box.innerHTML = `<p class="placeholder">No books added yet</p>`;
+        return;
+    }
+
+    checkout.forEach((book) => {
+        let div = document.createElement("div");
+        div.className = "checkout-item";
+        div.innerText = book;
+        box.appendChild(div);
+    });
+}
+
+function checkoutBooks(){
+    if(checkout.length === 0){
+        alert("No books added yet");
+        return;
+    }
+
+    alert("Your books have been checked out");
+
+    checkout = [];
+    renderCheckout();
+
+    document.querySelectorAll(".book-info button").forEach(btn => {
+        btn.innerText = "+ Add";
+    });
+}
+</script>
+
+</body>
+</html>
